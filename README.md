@@ -23,7 +23,7 @@ This plugin for [***GURPS* Character Assistant**](https://www.sjgames.com/gurps/
 
 ## Download
 
-- [Version 0.1](https://github.com/tdegruyl/ExportToHTML/archive/refs/tags/v0.1.zip)
+- Find [releases here](https://github.com/tdegruyl/ExportToHTML/releases)
 
 ## Installation
 
