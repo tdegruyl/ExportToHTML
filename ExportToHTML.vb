@@ -27,6 +27,7 @@ Imports System.Reflection
 '
 Public Class ExportToHTML
     Implements GCA5.Interfaces.IExportSheet
+    Private version As String = "0.2"
 
     Public Event RequestRunSpecificOptions(sender As GCA5.Interfaces.IExportSheet, e As GCA5.Interfaces.DialogOptions_RequestedOptions) Implements GCA5.Interfaces.IExportSheet.RequestRunSpecificOptions
 
@@ -123,19 +124,11 @@ Public Class ExportToHTML
 
 
         newOption = New GCA5Engine.SheetOption
-        newOption.Name = "UseHPOrConditionalInjury"
-        newOption.Type = GCA5Engine.OptionType.ListNumber
-        newOption.UserPrompt = "How do you want to track injury?"
-        newOption.DefaultValue = 0 'first item
-        newOption.List = {"Use HP", "Use Conditional Injury (Pyramid 3-120)", "Use Conditional Injury (Mission X)"}
-        ok = Options.AddOption(newOption)
-
-        newOption = New GCA5Engine.SheetOption
         newOption.Name = "UseControlPointsOrControlSeverity"
         newOption.Type = GCA5Engine.OptionType.ListNumber
-        newOption.UserPrompt = "How do you want to track injury?"
+        newOption.UserPrompt = "How do you want to manage grappling?"
         newOption.DefaultValue = 0 'first item
-        newOption.List = {"Do Nothing", "Use Control Points (Fantastic Dungeon Grappling)", "Use Control Severity (Mission X)"}
+        newOption.List = {"Basic Set rules (Do Nothing)", "Use Control Points (Fantastic Dungeon Grappling)", "Use Control Severity (Mission X)"}
         ok = Options.AddOption(newOption)
         
         newOption = New GCA5Engine.SheetOption
@@ -446,7 +439,8 @@ Public Class ExportToHTML
         fw.Paragraph("        ""skills-tab""")
         fw.Paragraph("        ""combat-tab""")
         fw.Paragraph("        ""equipment-tab""")
-        fw.Paragraph("        ""social-tab"";")
+        fw.Paragraph("        ""social-tab""")
+        fw.Paragraph("        ""footer"";")
         fw.Paragraph("}")
         If CurChar.Count(Spells) = 0 Then
             fw.Paragraph(".spells {display:none; visibility:hidden;}")
@@ -610,10 +604,13 @@ Public Class ExportToHTML
         fw.Paragraph("      ""spells"";")
         fw.Paragraph("}")
         fw.Paragraph("}")
+        fw.Paragraph(".footer { grid-area: footer; font-size: 0.7rem; text-align: right; margin-left:50%;}")
+        fw.Paragraph(".footer a { text-decoration: none; color: black; }")
         fw.Paragraph("</style>")
         fw.Paragraph("<style media=""print"" type=""text/css"">")
         fw.Paragraph("        select, input, .navigation {display: none !important;}")
         fw.Paragraph("        .tab {display: grid !important;break-inside:avoid !important;}")
+        fw.Paragraph("        .footer {position: fixed; bottom: 0};")
         fw.Paragraph("</style>")
         fw.Paragraph(" <script>")
         fw.Paragraph(" function openTab(evt, tabName) {")
@@ -641,6 +638,11 @@ Public Class ExportToHTML
     End Sub
 
     private Sub ExportHTMLFoot(CurChar as GCACharacter, fw as FileWriter)
+        fw.Paragraph("<div class=""footer"">This character sheet produced using " & _
+            "<a href=""https://www.sjgames.com/gurps/characterassistant/"">GURPS " & _ 
+            "Character Assistant 5</a> with <a " & _
+            "href=""https://github.com/tdegruyl/ExportToHTML"">ExportToHTML</a> version " & _
+            version & "</div>")
         fw.Paragraph("</body></html>")
     End Sub
 
