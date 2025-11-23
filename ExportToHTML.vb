@@ -986,7 +986,7 @@ Public Class ExportToHTML
         End If
         fw.Paragraph("<tr><td class=""title"">Control</td>" & _
             "<td colspan=""3"" class=""box field"" style=""min-width:1em;"">" & _
-            ControlCounter(CurChar) & "</td><tr>")
+            ControlCounter(CurChar) & "</td></tr>")
         For Each pool_name As String In pools
             Dim symbol As String
             Dim score As Integer

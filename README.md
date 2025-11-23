@@ -16,24 +16,25 @@ This plugin for [***GURPS* Character Assistant**](https://www.sjgames.com/gurps/
 - Support for tracking control for [***Fantastic Dungeon
   Grappling***](https://gaming-ballistic.myshopify.com/products/fantastic-dungeon-grappling)
 
-## Planned Features
+### Planned Features
 
 - Compatibility with Mission X from Gaming Ballistic
 - Mobile viewing optimization
 
 ## Download
 
-TBD
+- [Version 0.1](https://github.com/tdegruyl/ExportToHTML/archive/refs/tags/v0.1.zip)
 
 ## Installation
 
 Manually add the downloaded folder or zip file to the GURPS Character Assistant
-5/pluigins directory.
+5/plugins directory.
 
 ## Usage
 
-Within GCA, select "Export to HTML" from the File → Export menu.
+Within GCA, select "Export to HTML" from the File → Export menu. Options may be
+set within the Sheet Options dialog.
 
 ## Bug Reports and Feature Requests
 
-TBD
+Please use the github [Issue Tracker](https://github.com/tdegruyl/ExportToHTML/issues).
