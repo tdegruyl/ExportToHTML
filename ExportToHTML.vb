@@ -27,13 +27,14 @@ Imports System.Reflection
 '
 Public Class ExportToHTML
     Implements GCA5.Interfaces.IExportSheet
-    Private version As String = "0.2"
 
     Public Event RequestRunSpecificOptions(sender As GCA5.Interfaces.IExportSheet, e As GCA5.Interfaces.DialogOptions_RequestedOptions) Implements GCA5.Interfaces.IExportSheet.RequestRunSpecificOptions
 
     Private MyOptions As GCA5Engine.SheetOptionsManager
     Private OwnedItemText As String = "* = item is owned by another, its point value and/or cost is included in the other item."
     Private ShowOwnedMessage As Boolean
+    Private HomeFolder As String = ""
+    
     ''' <summary>
     ''' If multiple Characters might be printed, this is the value of the Always Ask Me option
     ''' </summary>
@@ -51,6 +52,10 @@ Public Class ExportToHTML
 
         Dim ok As Boolean
         Dim newOption As GCA5Engine.SheetOption
+        HomeFolder = Options.PluginHomeFolder
+        If Not HomeFolder.EndsWith("\") Then
+            HomeFolder = HomeFolder & "\"
+        End If
 
         Dim descFormat As New SheetOptionDisplayFormat
         descFormat.BackColor = SystemColors.Info
@@ -140,10 +145,49 @@ Public Class ExportToHTML
         newOption = New GCA5Engine.SheetOption
         newOption.Name = "NotesIncludeDescription"
         newOption.Type = GCA5Engine.OptionType.YesNo
-        newOption.UserPrompt = "Include a trait's Description in the User Notes and VTT Notes block."
+        newOption.UserPrompt = "Include a trait's Description in the User Notes and VTT Notes block?"
         newOption.DefaultValue = True
         ok = Options.AddOption(newOption)
 
+        newOption = New GCA5Engine.SheetOption
+        newOption.Name = "Header_NotesTab"
+        newOption.Type = GCA5Engine.OptionType.Header
+        newOption.UserPrompt = "Player Notes"
+        ok = Options.AddOption(newOption)
+
+        newOption = New GCA5Engine.SheetOption
+        newOption.Name = "IncludeNotesTab"
+        newOption.Type = GCA5Engine.OptionType.YesNo
+        newOption.UserPrompt = "Include a tab for user notes during play?"
+        newOption.DefaultValue = True
+        ok = Options.AddOption(newOption)
+
+        newOption = New GCA5Engine.SheetOption
+        newOption.Name = "Header_ArmorAsDice"
+        newOption.Type = GCA5Engine.OptionType.Header
+        newOption.UserPrompt = "Armor"
+        ok = Options.AddOption(newOption)
+
+        newOption = New GCA5Engine.SheetOption
+        newOption.Name = "UseArmorAsDice"
+        newOption.Type = GCA5Engine.OptionType.YesNo
+        newOption.UserPrompt = "Use Armor As Dice (from Pyramid 3/34 Armor Revisited)?"
+        newOption.DefaultValue = False
+        ok = Options.AddOption(newOption)
+
+        newOption = New GCA5Engine.SheetOption
+        newOption.Name = "Header_SSRT"
+        newOption.Type = GCA5Engine.OptionType.Header
+        newOption.UserPrompt = "Range Penalties"
+        ok = Options.AddOption(newOption)
+
+        newOption = New GCA5Engine.SheetOption
+        newOption.Name = "WhichSSRTToUse"
+        newOption.Type = GCA5Engine.OptionType.ListNumber
+        newOption.UserPrompt = "Which range penalties do you want to list?"
+        newOption.DefaultValue = 1 'second item: SSRT
+        newOption.List = {"Don't include", "Size, Speed, and Range Table (Basic Set p.550)", "Range Bands (Monster Hunters 2 p.21)"}
+        ok = Options.AddOption(newOption)
     End Sub
 
     Public Sub UpgradeOptions(Options As GCA5Engine.SheetOptionsManager) Implements GCA5.Interfaces.IExportSheet.UpgradeOptions
@@ -154,10 +198,11 @@ Public Class ExportToHTML
     End Sub
 
 
-    Public Function PreviewOptions(Options As GCA5Engine.SheetOptionsManager) As Boolean Implements GCA5.Interfaces.IExportSheet.PreviewOptions
-        'This is called after options are loaded, but before SupportedFileTypeFilter and PreferredFilterIndex are called,
-        'to allow for certain specialty sheets to do a little housekeeping if desired.
-
+    Public Function PreviewOptions(Options As GCA5Engine.SheetOptionsManager) As Boolean _
+            Implements GCA5.Interfaces.IExportSheet.PreviewOptions
+        'This is called after options are loaded, but before
+        'SupportedFileTypeFilter and PreferredFilterIndex are called, to allow
+        'for certain specialty sheets to do a little housekeeping if desired.
         'I dont do anything with this.
 
         'Be sure to return True to avoid the export process being canceled!
@@ -167,10 +212,12 @@ Public Class ExportToHTML
     Public Function PluginName() As String Implements GCA5.Interfaces.IExportSheet.PluginName
         Return "Export To HTML"
     End Function
-    Public Function PluginDescription() As String Implements GCA5.Interfaces.IExportSheet.PluginDescription
+    Public Function PluginDescription() As String _
+            Implements GCA5.Interfaces.IExportSheet.PluginDescription
         Return "Exports the currently selected character to an HTML file."
     End Function
-    Public Function PluginVersion() As String Implements GCA5.Interfaces.IExportSheet.PluginVersion
+    Public Function PluginVersion() As String _
+            Implements GCA5.Interfaces.IExportSheet.PluginVersion
         Return AutoFindVersion()
     End Function
 
@@ -250,14 +297,48 @@ Public Class ExportToHTML
         fw.Paragraph("<button class=""tablinks"" onclick=""openTab(event,'combat-tab')"">Combat</button>")
         fw.Paragraph("<button class=""tablinks"" onclick=""openTab(event,'equipment-tab')"">Equipment</button>")
         fw.Paragraph("<button class=""tablinks"" onclick=""openTab(event,'social-tab')"">Social</button>")
+        If MyOptions.value("IncludeNotesTab") Then
+            fw.Paragraph("<button class=""tablinks"" onclick=""openTab(event,'notes-tab')"">User Notes</button>")
+        End If
         fw.Paragraph("</div>")
         ExportSkillsTab(CurChar, fw)
         ExportEquipmentTab(CurChar, fw)
         ExportCombatTab(CurChar, fw)
         ExportSocialTab(CurChar, fw)
-
+        ExportUserNotesTab(CurChar, fw)
         ExportHTMLFoot(CurChar,fw)
     End Sub
+
+    Private Sub ExportUserNotesTab( CurChar as GCACharacter, fw as FileWriter)
+        fw.Paragraph("<div id=""notes-tab"" class=""tab"">")
+        If MyOptions.value("IncludeNotesTab") Then
+            fw.Paragraph("<textarea id=""user-notes"" name=""user-notes"" " & _
+                "onchange=""poolConditionNotifications()"">" & _
+                "</textarea>")
+        End If
+        fw.Paragraph("</div>")
+    End Sub
+
+    Private Function FormatArmor(dr as String) As String
+        If MyOptions.value("UseArmorAsDice") Then
+            ' if string is just digits convert it
+            ' otherwise split on  '/' and process each part
+            Dim regex As Regex = New Regex("^\d+$")
+            Dim match as Match = regex.Match(dr)
+            If match.Success Then
+                return ToDice(dr)
+            Else 
+                Dim armorArray As String() = dr.Split("/".ToCharArray(), _
+                    StringSplitOptions.RemoveEmptyEntries)
+                Dim out As List(Of String) = New List(Of String)
+                For Each part As String in armorArray 
+                    out.Add(ToDice(part))
+                Next
+                return String.Join("/", out)
+            End If
+        End If
+        return dr
+    End Function
 
     Private Sub ExportCharinfoCard(CurChar as GCACharacter, fw as FileWriter)
         fw.Paragraph("<div class=""charinfo-card"">")
@@ -293,6 +374,7 @@ Public Class ExportToHTML
         fw.Paragraph("<div id=""combat-tab"" class=""tab"">")
         ExportMeleeAttacks(CurChar, fw)
         ExportRangedAttacks(CurChar, fw)
+        ExportDefense(CurChar, fw)
         ExportProtection(CurChar, fw)
         ExportSSRT(CurChar,fw)
         fw.Paragraph("</div>")
@@ -306,8 +388,16 @@ Public Class ExportToHTML
         fw.Paragraph("</div>")
     End Sub
 
-' TODO: responsive design so we can use phones and tablets
     Private Sub ExportHTMLHead(CurChar as GCACharacter, fw as FileWriter)
+        Dim tmp As String
+        Dim css As String
+        Dim script As String
+
+        tmp = HomeFolder & "ExportToHTML.css"
+        css = System.IO.File.ReadAllText(tmp)
+        tmp = HomeFolder & "ExportToHTML.js"
+        script = System.IO.File.ReadAllText(tmp)
+        
         fw.Paragraph("<!DOCTYPE html>")
         fw.Paragraph("<html lang=""en"">")
         fw.Paragraph("<head>")
@@ -318,322 +408,16 @@ Public Class ExportToHTML
         fw.Paragraph("<!-- link href=""https://fonts.googleapis.com/css2?family=Patrick+Hand+SC&display=swap"" rel=""stylesheet"" -->")
         fw.Paragraph("<meta name=""viewport"" content=""width=device-width, initial-scale=1"" />")
         fw.Paragraph("<style>")
-        fw.Paragraph(".navigation { grid-area: navigation; border: thin solid #ccc; background-color:#f1f1f1;}")
-        fw.Paragraph(".navigation button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 1rem 0.5rem; transition: 0.3s; }")
-        fw.Paragraph(".navigation button:hover { background-color: #ddd; }")
-        fw.Paragraph(".navigation button.active { background-color: #ccc; }" )
-        fw.Paragraph(".qty1 { /* visibility: hidden; */ }")
-        fw.Paragraph(".center { text-align: center; }" )
-        fw.Paragraph(".title { ")
-        fw.Paragraph("    font-weight: bold;")
-        fw.Paragraph("    text-align: right;")
-        fw.Paragraph("}")
-        fw.Paragraph(".field {")
-        fw.Paragraph("    padding-left: 0.5rem;")
-        fw.Paragraph("    padding-right: 0.5rem;")
-        fw.Paragraph("    color: #702963;")
-        fw.Paragraph("    /* font-family: ""Patrick Hand SC"", cursive; */")
-        fw.Paragraph("    font-weight: 400;")
-        fw.Paragraph("    font-style: normal;")
-        fw.Paragraph("    font-size:100%;")
-        fw.Paragraph("}")
-        fw.Paragraph(".underlined {")
-        fw.Paragraph(" /*")
-        fw.Paragraph("    border-bottom: thin solid black;")
-        fw.Paragraph("*/")
-        fw.Paragraph("}")
-        fw.Paragraph("th { ")
-        fw.Paragraph("    text-align: left;")
-        fw.Paragraph("    text-decoration: underline;")
-        fw.Paragraph("    font-weight:bold;")
-        fw.Paragraph("}")
-        fw.Paragraph(".row div { display: inline-block;}")
-        fw.Paragraph(".tab { font-size: 0.85rem;display: none; animation: fadeEffect 1.5s;}")
-        fw.Paragraph(".tab div {")
-        fw.Paragraph("    box-decoration-break: clone;")
-        fw.Paragraph("    -webkit-box-decoration-break: clone;")
-        fw.Paragraph("    break-inside: avoid;")
-        fw.Paragraph("}")
-
-        fw.Paragraph("#equipment-tab {")
-        fw.Paragraph("    display:grid;")
-        fw.Paragraph("    grid-area: equipment-tab;")
-        fw.Paragraph("    grid-template-columns: 70% 30%;")
-        fw.Paragraph("    grid-template-rows: auto;")
-        fw.Paragraph("    gap: 0.5rem 0.5rem;")
-        fw.Paragraph("    grid-auto-flow: column;")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("      ""carried-equipment lift""")
-        fw.Paragraph("      ""carried-equipment encumbrance"";")
-        fw.Paragraph("}")
-
-        fw.Paragraph("#combat-tab {")
-        fw.Paragraph("    display:grid;")
-        fw.Paragraph("    grid-template-rows: auto;")
-        fw.Paragraph("    gap: 0.5rem 0.5rem;")
-        fw.Paragraph("    grid-auto-flow: column;")
-        fw.Paragraph("    grid-area: combat-tab;")
-        fw.Paragraph("    grid-template-columns: 75% 25%;")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("      ""melee hit-locations""")
-        fw.Paragraph("      ""ranged hit-locations""")
-        fw.Paragraph("      ""ssrt ssrt"";")
-        fw.Paragraph("}")
-
-        fw.Paragraph("#social-tab {")
-        fw.Paragraph("    display:grid;")
-        fw.Paragraph("    grid-template-rows: auto;")
-        fw.Paragraph("    gap: 0.5rem 0.5rem;")
-        fw.Paragraph("    grid-auto-flow: column;")
-        fw.Paragraph("    grid-area: social-tab;")
-        fw.Paragraph("    grid-template-columns: 25% 50% 25%;")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("      ""languages notes reactions""")
-        fw.Paragraph("      ""cultures notes reactions"";")
-        fw.Paragraph("}")
-
-        fw.Paragraph(".attributes-card {")
-        fw.Paragraph("    grid-area: attributes-card;")
-        fw.Paragraph("}")
-
-        fw.Paragraph(".charinfo-card {")
-        fw.Paragraph("    display:grid;")
-        fw.Paragraph("    grid-area: charinfo-card;")
-        fw.Paragraph("    grid-template-columns: 2fr 3fr 1fr;")
-        fw.Paragraph("    grid-template-rows: auto;")
-        fw.Paragraph("    gap: 0.5rem 0.5rem;")
-        fw.Paragraph("    grid-auto-flow: column;")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("      ""char-portrait-field charinfo point-summary"";")
-        fw.Paragraph("}")
-
-        fw.Paragraph("#skills-tab {")
-        fw.Paragraph("    display:grid;")
-        fw.Paragraph("    grid-template-rows: auto;")
-        fw.Paragraph("    gap: 0.5rem 0.5rem;")
-        fw.Paragraph("    grid-auto-flow: column;")
-        fw.Paragraph("    grid-area: skills-tab;")
-        fw.Paragraph("    grid-template-columns: 33% 67%;")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("      ""traits skills""")
-        If CurChar.Count(Spells) <> 0 Then
-            fw.Paragraph("      ""traits spells""")
-        End If
-        fw.Paragraph("      ;")
-        fw.Paragraph("}")
-
-        fw.Paragraph("html { font-size: small;}")
-        fw.Paragraph("body {")
-        fw.Paragraph("    max-width: 992px;")
-        fw.Paragraph("    padding: 1em;")
-        fw.Paragraph("    display: grid;")
-        fw.Paragraph("    font-family: verdana;")
-        fw.Paragraph("    grid-template-columns: 100%;")
-        fw.Paragraph("    grid-template-rows: auto;")
-        fw.Paragraph("    gap: 0.5rem 0.5rem;")
-        fw.Paragraph("    grid-auto-flow: column;")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("        ""charinfo-card""")
-        fw.Paragraph("        ""attributes-card""")
-        fw.Paragraph("        ""navigation""")
-        fw.Paragraph("        ""skills-tab""")
-        fw.Paragraph("        ""combat-tab""")
-        fw.Paragraph("        ""equipment-tab""")
-        fw.Paragraph("        ""social-tab""")
-        fw.Paragraph("        ""footer"";")
-        fw.Paragraph("}")
+        fw.Paragraph(css)
         If CurChar.Count(Spells) = 0 Then
             fw.Paragraph(".spells {display:none; visibility:hidden;}")
         End If
-        fw.Paragraph(".attributes {  ")
-        fw.Paragraph("    grid-area: attributes;")
-        fw.Paragraph("    display: grid;")
-        fw.Paragraph("    grid-template-columns: 2fr 3fr 4fr 2fr; ")
-        fw.Paragraph("    grid-template-rows: auto;")
-        fw.Paragraph("    grid-auto-flow: column;")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("        ""primary-attributes secondary-attributes pools defense""")
-        fw.Paragraph("}")
-        fw.Paragraph(".charinfo {  ")
-        fw.Paragraph("    grid-area: charinfo;")
-        fw.Paragraph("    font-size: 100%;")
-        fw.Paragraph("    display: grid;")
-        fw.Paragraph("    grid-template-columns: 1fr 3fr 1fr 3fr 1fr 3fr; ")
-        fw.Paragraph("    grid-template-rows: auto;")
-        fw.Paragraph("    gap: 0.2rem 0.2rem;")
-        fw.Paragraph("    grid-auto-flow: column;")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("          ""char-name-field char-name-field char-name-field player player-field player-field""")
-        fw.Paragraph("          ""height height-field weight weight-field age age-field""")
-        fw.Paragraph("          ""ancestry ancestry-field tl tl-field size size-field """)
-        fw.Paragraph("          ""appearance appearance-field appearance-field appearance-field appearance-field appearance-field""")
-        fw.Paragraph("}")
-        fw.Paragraph(".char-portrait-field {grid-area: char-portrait-field; font-size: 20pt; text-align: center;}")
-        fw.Paragraph(".portrait {max-width: 15vw; max-height:15vw;}")
-        fw.Paragraph(".char-name-field { grid-area: char-name-field; font-size: 200%; text-align: center;}")
-        fw.Paragraph(".player-field { grid-area: player-field;  }")
-        fw.Paragraph(".player { grid-area: player;}")
-        fw.Paragraph(".char-title { grid-area: char-title; }")
-        fw.Paragraph(".char-title-field { grid-area: char-title-field;}")
-        fw.Paragraph(".org-field {grid-area: org-field; }")
-        fw.Paragraph(".org {grid-area: org; }")
-        fw.Paragraph(".ancestry-field { grid-area: ancestry-field; }")
-        fw.Paragraph(".ancestry { grid-area: ancestry; }")
-        fw.Paragraph(".height { grid-area: height; }")
-        fw.Paragraph(".height-field { grid-area: height-field;  }")
-        fw.Paragraph(".weight { grid-area: weight; }")
-        fw.Paragraph(".weight-field { grid-area: weight-field;  }")
-        fw.Paragraph(".hair { grid-area: hair; }")
-        fw.Paragraph(".hair-field { grid-area: hair-field; }")
-        fw.Paragraph(".age-field { grid-area: age-field;  }")
-        fw.Paragraph(".age { grid-area: age; }")
-        fw.Paragraph(".birthday-field { grid-area: birthday-field; }")
-        fw.Paragraph(".birthday { grid-area: birthday; }")
-        fw.Paragraph(".eyes-field { grid-area: eyes-field; }")
-        fw.Paragraph(".eyes { grid-area: eyes; }")
-        fw.Paragraph(".hand-field { grid-area: hand-field; }")
-        fw.Paragraph(".hand { grid-area: hand; }")
-        fw.Paragraph(".name { grid-area: name; }")
-        fw.Paragraph(".size-field { grid-area: size-field;  }")
-        fw.Paragraph(".size { grid-area: size; }")
-        fw.Paragraph(".skin-field { grid-area: skin-field; }")
-        fw.Paragraph(".skin { grid-area: skin; }")
-        fw.Paragraph(".appearance-field{grid-area: appearance-field; }")
-        fw.Paragraph(".appearance {grid-area: appearance; }")
-        fw.Paragraph(".tl-field{grid-area: tl-field; }")
-        fw.Paragraph(".tl {grid-area: tl; }")
-        fw.Paragraph(".religion {grid-area: religion; }")
-        fw.Paragraph(".religion-field {grid-area: religion-field; }")
-        fw.Paragraph(".point-summary {grid-area:point-summary;}")
-        fw.Paragraph(".primary-attributes {grid-area: primary-attributes; width:100%; font-size: 120%;}")
-        fw.Paragraph(".secondary-attributes {grid-area: secondary-attributes; font-size: 120%;  }")
-        fw.Paragraph(".pools {grid-area: pools; font-size: 120%;  }")
-        fw.Paragraph(".defense {grid-area: defense; font-size: 120%;}")
-        fw.Paragraph(".title {vertical-align:middle; }")
-        fw.Paragraph(".box {border: medium solid black; padding-left: 0.5rem; padding-right:0.5rem;text-align:center; vertical-align: middle;}")
-        fw.Paragraph(".right {text-align:right; vertical-align: middle;}")
-        fw.Paragraph(".melee {grid-area: melee;  border: thick solid black; }")
-        fw.Paragraph(".ranged {grid-area: ranged;  border: thick solid black;}")
-        fw.Paragraph(".carried-equipment { grid-area: carried-equipment;  border: thick solid black;}")
-        fw.Paragraph(".other-equipment { grid-area: other-equipment;  border: thick solid black;}")
-        fw.Paragraph(".traits {grid-area: traits; border: thick solid black; }")
-        fw.Paragraph(".traits-list { column-count:1; column-gap: 1rem; column-rule: medium solid black; }")
-        fw.Paragraph(".skills {grid-area: skills; border: thick solid black;}")
-        fw.Paragraph(".skills-list { column-count:2; column-gap: 1rem; column-rule: medium solid black; }")
-        fw.Paragraph(".hanging { display: list-item; list-style-position: inside; text-indent: -1rem; padding-left: 2rem;}")
-        fw.Paragraph(".spells {grid-area: spells; border: thick solid black;}")
-        fw.Paragraph(".spells-list { column-count:2; column-gap: 1rem; column-rule: medium solid black; }")
-        fw.Paragraph(".encumbrance {grid-area: encumbrance; font-size: 90%;   border: thick solid black;}")
-        fw.Paragraph(".lift {grid-area: lift; font-size: 90%;   border: thick solid black;}")
-        fw.Paragraph(".points {font-size:70%; padding-left: 0.5rem; /*display:none;visibility:hidden;*/}")
-        fw.Paragraph(".equipment { width: 100%; padding: 1em; border: thick solid black;}")
-        fw.Paragraph(".equipment-list { column-count:2; column-gap: 1rem; column-rule: medium solid black; }")
-        fw.Paragraph(".reactions { grid-area: reactions; border: thick solid black; }")
-        fw.Paragraph(".reactions td { vertical-align: top; } ")
-        fw.Paragraph(".cultures { grid-area: cultures; border: thick solid black; }")
-        fw.Paragraph(".languages { grid-area: languages; border: thick solid black;}")
-        fw.Paragraph(".hit-locations { grid-area: hit-locations; border: thick solid black; }")
-        fw.Paragraph(".hit-locations td {text-align: right;}")
-        fw.Paragraph(".hit-locations td.field {text-align: left;}")
-        fw.Paragraph(".notes {grid-area: notes; border: thick solid black;}")
-        fw.Paragraph(".ssrt {grid-area: ssrt; border: thick solid black;}")
-        fw.Paragraph(".ssrt td{ text-align: right; }")
-        fw.Paragraph("td { padding-left: 1em; padding-right:1em; vertical-align: middle; }")
-        fw.Paragraph(".number { text-align: right; }")
-        fw.Paragraph(".section-title {text-decoration: none; background-color: black; color: white; padding: 1em; font-size: 120%; font-weight: bold; text-align: center; }")
-        fw.Paragraph(".table-title {text-decoration: none; background-color: black; color: white; padding: 1em; font-size: 110%; font-weight: bold; text-align: center; }")
-        fw.Paragraph("table { width: 100%; }")
-        fw.Paragraph(".alternate tr:nth-child(even) {")
-        fw.Paragraph("    background-color: #D3D3D3;")
-        fw.Paragraph("}")
-        fw.Paragraph(".current {")
-        fw.Paragraph("    background-color: #D3D3D3;")
-        fw.Paragraph("}")
-        fw.Paragraph("#notifications {")
-        fw.Paragraph("    color: red;")
-        fw.Paragraph("}")
-        fw.Paragraph("@keyframes fadeEffect { from {opacity: 0;} to {opacity: 1;}}")
-        fw.Paragraph("@media screen and width < 80rem {")
-        fw.Paragraph(".attributes {  ")
-        fw.Paragraph("    grid-template-columns: 100%; ")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("        ""primary-attributes""") 
-        fw.Paragraph("        ""secondary-attributes""")
-        fw.Paragraph("        ""pools""")
-        fw.Paragraph("        ""defense""")
-        fw.Paragraph("}")
-
-        fw.Paragraph("#equipment-tab {")
-        fw.Paragraph("    grid-template-columns: 100%;")
-        fw.Paragraph("    grid-template-rows: auto;")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("      ""carried-equipment""")
-        fw.Paragraph("      ""lift""")
-        fw.Paragraph("      ""encumbrance"";")
-        fw.Paragraph("}")
-
-        fw.Paragraph("#combat-tab {")
-        fw.Paragraph("    grid-template-columns: 100%;")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("      ""melee""")
-        fw.Paragraph("      ""ranged""")
-        fw.Paragraph("      ""hit-locations""")
-        fw.Paragraph("      ""ssrt"";")
-        fw.Paragraph("}")
-
-        fw.Paragraph("#social-tab {")
-        fw.Paragraph("    grid-template-columns: 100%;")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("      ""languages""")
-        fw.Paragraph("      ""reactions""")
-        fw.Paragraph("      ""cultures""")
-        fw.Paragraph("      ""notes "";")
-        fw.Paragraph("}")
-
-        fw.Paragraph(".charinfo-card {")
-        fw.Paragraph("    grid-template-columns: 100%;")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("      ""charinfo"";")
-        fw.Paragraph("}")
-
-        fw.Paragraph("#skills-tab {")
-        fw.Paragraph("    grid-template-columns: 100%;")
-        fw.Paragraph("    grid-template-areas:")
-        fw.Paragraph("      ""skills""")
-        fw.Paragraph("      ""traits""")
-        fw.Paragraph("      ""spells"";")
-        fw.Paragraph("}")
-        fw.Paragraph("}")
-        fw.Paragraph(".footer { grid-area: footer; font-size: 0.7rem; text-align: right; margin-left:50%;}")
-        fw.Paragraph(".footer a { text-decoration: none; color: black; }")
         fw.Paragraph("</style>")
-        fw.Paragraph("<style media=""print"" type=""text/css"">")
-        fw.Paragraph("        select, input, .navigation {display: none !important;}")
-        fw.Paragraph("        .tab {display: grid !important;break-inside:avoid !important;}")
-        fw.Paragraph("        .footer {position: fixed; bottom: 0};")
-        fw.Paragraph("</style>")
-        fw.Paragraph(" <script>")
-        fw.Paragraph(" function openTab(evt, tabName) {")
-        fw.Paragraph("   var i, tabcontent, tablinks;")
-        fw.Paragraph("   tabcontent = document.getElementsByClassName(""tab"");")
-        fw.Paragraph("   for (i = 0; i < tabcontent.length; i++) {")
-        fw.Paragraph("     tabcontent[i].style.display = ""none"";")
-        fw.Paragraph("   }")
-        fw.Paragraph("   tablinks = document.getElementsByClassName(""tablinks"");")
-        fw.Paragraph("   document.getElementById(tabName).style.display = ""grid"";")
-        fw.Paragraph("   if( evt != null) {")
-        fw.Paragraph("     for (i = 0; i < tablinks.length; i++) {")
-        fw.Paragraph("       tablinks[i].className = tablinks[i].className.replace("" active"", """");")
-        fw.Paragraph("     }")
-        fw.Paragraph("     evt.currentTarget.className += "" active"";")
-        fw.Paragraph("   }")
-        fw.Paragraph("} ")
-        fw.Paragraph("for (i = 1; i < tabcontent.length; i++) {")
-        fw.Paragraph("  tabcontent[i].style.display = ""none"";")
-        fw.Paragraph("}")
+        fw.Paragraph("<script>")
+        fw.Paragraph(script)
         fw.Paragraph("</script>")
         fw.Paragraph("</head>")
-        fw.Paragraph("<body onload=""poolConditionNotifications();openTab(null, 'skills-tab');"">")
+        fw.Paragraph("<body onload=""loadstoreddata();poolConditionNotifications();openTab(null, 'skills-tab');"">")
 
     End Sub
 
@@ -642,31 +426,72 @@ Public Class ExportToHTML
             "<a href=""https://www.sjgames.com/gurps/characterassistant/"">GURPS " & _ 
             "Character Assistant 5</a> with <a " & _
             "href=""https://github.com/tdegruyl/ExportToHTML"">ExportToHTML</a> version " & _
-            version & "</div>")
+            AutoFindVersion() & "</div>")
         fw.Paragraph("</body></html>")
     End Sub
 
     Private Sub ExportSSRT(CurChar as GCACharacter, fw as FileWriter)
-        fw.Paragraph("	    <div class=""ssrt"">")
-        fw.Paragraph("		    <h1 class=""section-title"">Range Penalties</h1>")
-        fw.Paragraph("		    <table>")
-        fw.Paragraph("			    <tr><th>Range</td><td>2</td><td>3</td><td>5</td>")
-        fw.Paragraph("				    <td>7</td><td>10</td><td>15</td>")
-        fw.Paragraph("				    <td>20</td><td>30</td><td>50</td>")
-        fw.Paragraph("				    <td>70</td><td>100</td><td>150</td>")
-        fw.Paragraph("			    	    <td>200</td><td>300</td><td>500</td></tr> ")
-        fw.Paragraph("			    <tr><th>Penalty</td><td>+0</td><td>-1</td><td>-2</td><td>-3</td>")
-        fw.Paragraph("				    <td>-4</td><td>-5</td><td>-6</td><td>-7</td> ")
-        fw.Paragraph("				    <td>-8</td><td>-9</td><td>-10</td><td>-11</td>")
-        fw.Paragraph("			    	    <td>-12</td><td>-13</td><td>-14</td></tr>")
-        fw.Paragraph("		    </table>")
-        fw.Paragraph("	    </div>")
-        fw.Paragraph("            <script>")
-        fw.Paragraph("                const list = document.getElementsByClassName(""qty1"");")
-        fw.Paragraph("                for (var item of list) { item.innerHTML = """"; }")
-        fw.Paragraph("            </script>")
-        fw.Paragraph("</body>")
-        fw.Paragraph("</html>")
+        fw.Paragraph("<div class=""ssrt"">")
+        If MyOptions.Value("WhichSSRTToUse") = 1 Then ' use SSRT
+            fw.Paragraph("<h1 class=""section-title"">Range Penalties</h1>")
+            fw.Paragraph("<table>")
+            fw.Paragraph("<tr><td class=""title"">Range</td>" & _ 
+                "<td>2</td>" & _ 
+                "<td>3</td>" & _ 
+                "<td>5</td>" & _
+                "<td>7</td>" & _ 
+                "<td>10</td>" & _ 
+                "<td>15</td>" & _
+                "<td>20</td>" & _ 
+                "<td>30</td>" & _ 
+                "<td>50</td>" & _
+                "<td>70</td>" & _ 
+                "<td>100</td>" & _ 
+                "<td>150</td>" & _
+                "<td>200</td>" & _ 
+                "<td>300</td>" & _ 
+                "<td>500</td></tr> ")
+            fw.Paragraph("<tr><td class=""title"">Penalty</td>" & _ 
+                "<td>+0</td>" & _ 
+                "<td>-1</td>" & _ 
+                "<td>-2</td>" & _ 
+                "<td>-3</td>" & _
+                "<td>-4</td>" & _ 
+                "<td>-5</td>" & _ 
+                "<td>-6</td>" & _ 
+                "<td>-7</td> " & _
+                "<td>-8</td>" & _ 
+                "<td>-9</td>" & _ 
+                "<td>-10</td>" & _ 
+                "<td>-11</td>" & _
+                "<td>-12</td>" & _ 
+                "<td>-13</td>" & _ 
+                "<td>-14</td></tr>")
+            fw.Paragraph("</table>")
+        Else If MyOptions.Value("WhichSSRTToUse") = 2 Then
+            fw.Paragraph("<h1 class=""section-title"">Range Penalties</h1>")
+            fw.Paragraph("<table>")
+            fw.Paragraph("<tr><th></th>" & _
+                "<th class=""title"">Close</th>" & _
+                "<th class=""title"">Short</th>" & _ 
+                "<th class=""title"">Medium</th>" & _
+                "<th class=""title"">Long</th>" & _
+                "<th class=""title"">Extreme</th></tr>")
+            fw.Paragraph("<tr><td class=""title"">Range</td>" & _
+                "<td>0-5</td>" & _
+                "<td>6-20</td>" & _ 
+                "<td>21-100</td>" & _
+                "<td>101-500</td>" & _
+                "<td>501+</td></tr>")
+            fw.Paragraph("<tr><td classs=""title"">Penalty</td>" & _
+                "<td>0</td>" & _
+                "<td>-3</td>" & _
+                "<td>-7</td>" & _
+                "<td>-11</td>" & _
+                "<td>-15</td></tr>")
+            fw.Paragraph("</table>")
+        End If
+        fw.Paragraph("</div>")
     End Sub
 
     Private Sub ExportLift(CurChar as GCACharacter, fw as FileWriter)
@@ -1014,6 +839,10 @@ Public Class ExportToHTML
         fw.Paragraph("        </table>")
         fw.Paragraph("    </div>")
         fw.Paragraph("<script>")
+        '
+        ' loadstoreddata()
+        '
+        fw.Paragraph("function loadstoreddata(){")
         If MyOptions.Value("UseHPOrConditionalInjury") = 0 Then
             fw.Paragraph("let storedCur_HP = localStorage.getItem('cur_HP');")
             fw.Paragraph("if(storedCur_HP != """"){" & _
@@ -1031,6 +860,11 @@ Public Class ExportToHTML
             fw.Paragraph("let storedCur_Control = localStorage.getItem('cur_Control');")
             fw.Paragraph("if(storedCur_Control != """"){" & _
                 "document.getElementById(""cur_Control"").value = storedCur_Control;}")
+        End If
+        If MyOptions.Value("IncludeNotesTab") Then 
+            fw.Paragraph("let storedUserNotes = localStorage.getItem('cur_UserNotes');")
+            fw.Paragraph("if(storedUserNotes != """"){" & _
+                "document.getElementById(""user-notes"").value = storedUserNotes;}")
         End If
         For Each pool_name As String In pools
             Dim symbol As String
@@ -1054,11 +888,15 @@ Public Class ExportToHTML
                 """).value = " & symbol &";")
         Next
         fw.Paragraph("document.getElementById(""cur_FP"").min = (-1 * FP);")
+        fw.Paragraph("}")
         '
         ' poolConditionNotifications()
         '
         fw.Paragraph("function poolConditionNotifications(){")
+        ListLoc = CurChar.ItemPositionByNameAndExt("Fatigue Points", Stats)
+        fw.Paragraph("let FP = " & CurChar.Items(ListLOc).TagItem("score") & ";")
         fw.Paragraph("var output = """";")
+        fw.Paragraph("showFullMoveHideHalfMove();")
         If MyOptions.Value("UseControlPointsOrControlSeverity") = 1 Then ' use CP
             ListLoc = CurChar.ItemPositionByNameAndExt("Lifting ST", Stats)
             fw.Paragraph("var CM = " &  CurChar.Items(ListLoc).TagItem("score") & ";")
@@ -1081,8 +919,12 @@ Public Class ExportToHTML
         fw.Paragraph("var cur_FP = document.getElementById(""cur_FP"").value;")
         If MyOptions.Value("UseControlPointsOrControlSeverity") = 1 Then ' use CP
             fw.Paragraph("var cur_CP = document.getElementById(""cur_CP"").value;")
-        Else If MyOptions.Value("UseControlPointsOrControlSeverity") = 1 Then ' use Severity
+        Else If MyOptions.Value("UseControlPointsOrControlSeverity") = 2 Then ' use Severity
             fw.Paragraph("var cur_Control = document.getElementById(""cur_Control"").value;")
+        End If
+        If MyOptions.Value("IncludeNotesTab") Then 
+            fw.Paragraph("var cur_UserNotes = document.getElementById(""user-notes"").value;")
+            fw.Paragraph("localStorage.setItem(""cur_UserNotes"", cur_UserNotes)")
         End If
         If MyOptions.Value("UseHPOrConditionalInjury") = 0 Then
             fw.Paragraph("var cur_HP = document.getElementById(""cur_HP"").value;")
@@ -1092,7 +934,7 @@ Public Class ExportToHTML
         fw.Paragraph("localStorage.setItem(""cur_FP"", cur_FP)")
         If MyOptions.Value("UseControlPointsOrControlSeverity") = 1 Then ' use CP
             fw.Paragraph("localStorage.setItem(""cur_CP"", cur_CP)")
-        Else If MyOptions.Value("UseControlPointsOrControlSeverity") = 1 Then ' use Severity
+        Else If MyOptions.Value("UseControlPointsOrControlSeverity") = 2 Then ' use Severity
             fw.Paragraph("localStorage.setItem(""cur_Control"", cur_Control)")
         End If
         If MyOptions.Value("UseHPOrConditionalInjury") = 0 Then
@@ -1102,12 +944,14 @@ Public Class ExportToHTML
         End If
         fw.Paragraph("if( cur_FP < Math.ceil(FP/3) && cur_FP >= -1*FP){")
         fw.Paragraph("output += ""<li>Halve your Move, Dodge, and ST (round up).</li>"";")
+        ' show halfmove, hide fullmove
+        fw.Paragraph("showHalfMoveHideFullMove();")
         fw.Paragraph("} ")
         fw.Paragraph("if ( cur_FP < 0 && cur_FP > -1* FP) {")
         fw.Paragraph("output += ""<li>If you suffer further fatigue, each FP you lose " & _
             "also causes 1 HP of injury. To do anything besides talk or rest, you must " & _
             "make a Will roll On a failure, you collapse, incapacitated, and can do " & _
-            "nothing until you recover to posi- tive FP. On a critical failure, make an " & _
+            "nothing until you recover to positive FP. On a critical failure, make an " & _
             "immediate HT roll. If you fail, you suffer a heart attack.</li>"";")
         fw.Paragraph("} else if ( cur_FP <= -1*FP ) {")
         fw.Paragraph("output += ""<li>You're unconscious.</li>"";")
@@ -1151,7 +995,11 @@ Public Class ExportToHTML
             fw.Paragraph("}") 
         End If
         If MyOptions.Value("UseHPOrConditionalInjury") = 0 Then
-            fw.Paragraph("if ( cur_HP <= 0 && cur_HP > -5* hp) {")
+            fw.Paragraph("if ( cur_HP < hp/3) {")
+            fw.Paragraph("output += ""<li>Halve move and dodge (round up).</li>"";")
+            ' show halfmove, hide fullmove
+            fw.Paragraph("showHalfMoveHideFullMove();")
+            fw.Paragraph("} else if ( cur_HP <= 0 && cur_HP > -5* hp) {")
             fw.Paragraph("output += ""<li>Make a HT roll at the start of each of your " & _
                 "turns, at -1 per full multiple of HP below zero or fall unconscious. " & _
                 "Each time you pass a negative multiple of HP, immediately make a HT " & _
@@ -1183,18 +1031,24 @@ Public Class ExportToHTML
                 "(-4)</li><li>Failure: Terrible Pain</li></ul></li>"";")
             fw.Paragraph("output += ""<li>Roll HT for knockdown and stun</li>"";")
             fw.Paragraph("output += ""<li><b>Halve move and dodge</b>. Round up</li>"";")
+            ' show halfmove, hide fullmove
+            fw.Paragraph("showHalfMoveHideFullMove();")
             fw.Paragraph("} else if (cur_Injury == 0) { // Crippled")
             fw.Paragraph("output += ""<li>Roll HT for pain: <ul><li>Success: Shock " & _
                 "(-4)</li><li>Failure: Agony</li></ul></li>"";")
             fw.Paragraph("output += ""<li>Roll HT to remain conscious</li>"";")
             fw.Paragraph("output += ""<li>Roll HT for knockdown and stun</li>"";")
             fw.Paragraph("output += ""<li><b>Halve move and dodge</b>. Round up</li>"";")
+            ' show halfmove, hide fullmove
+            fw.Paragraph("showHalfMoveHideFullMove();")
             fw.Paragraph("} else if (cur_Injury == 1) { // Crippled")
             fw.Paragraph("output += ""<li>Roll HT for pain: <ul><li>Success: Shock " & _
                 "(-4)</li><li>Failure: Agony</li></ul></li>"";")
             fw.Paragraph("output += ""<li>Roll HT to remain conscious</li>"";")
             fw.Paragraph("output += ""<li>Roll HT for knockdown and stun</li>"";")
             fw.Paragraph("output += ""<li><b>Halve move and dodge</b>. Round up</li>"";")
+            ' show halfmove, hide fullmove
+            fw.Paragraph("showHalfMoveHideFullMove();")
             fw.Paragraph("} else if (cur_Injury == 2) { // Mortal Wound")
             fw.Paragraph("output += ""<li>Roll HT to not die</li>"";")
             fw.Paragraph("output += ""<li>Roll HT to remain conscious</li>"";")
@@ -1228,7 +1082,7 @@ Public Class ExportToHTML
     End Sub
 
     Private Sub ExportDefense(CurChar as GCACharacter, fw As FileWriter)
-        Dim ListLoc, EncRow, move As Integer
+        Dim ListLoc, EncRow, move, dodge As Integer
 
         EncRow = CurChar.EncumbranceLevel
         If EncRow = 0 Then
@@ -1248,21 +1102,26 @@ Public Class ExportToHTML
         If ListLoc > 0 Then
             move = CurChar.Items(ListLoc).TagItem("score")
         End If
+        dodge = CurChar.Items(ListLoc).TagItem("score") - EncRow
 
         ListLoc = CurChar.ItemPositionByNameAndExt("Dodge", Stats)
 
         fw.Paragraph("<div class=""defense"">")
+        fw.Paragraph("<h1 class=""section-title"">Defense</h1>")
         fw.Paragraph("    <table>")
         fw.Paragraph("        <tr><td class=""title"">DR</td><td class=""box field"">" & _
-            RemoveNoteBrackets(CurChar.Body.Item("Torso").DR) & "</td><td></td></tr>")
+            FormatArmor(RemoveNoteBrackets(CurChar.Body.Item("Torso").DR)) & _
+            "</td><td></td></tr>")
         fw.Paragraph("    <tr><td class=""title"">Move</td><td class=""box field"">" & _
-            move & "</td><td></td></tr>")
+            "<span class=""fullmove"">" & move & "</span>" & _
+            "<span class=""halfmove"">" & Math.Ceiling(move/2) & "</span></td><td></td></tr>")
         fw.Paragraph("    <tr><td class=""title"">Dodge</td><td class=""box field"">" & _ 
-            (CurChar.Items(ListLoc).TagItem("score") - EncRow) & "</td><td></td></tr>")
-        fw.Paragraph("    <tr><td class=""title"">Block</td><td class=""box field"">" & _
-            CurChar.blockscore & "</td><td></td></tr>")
-        fw.Paragraph("    <tr><td class=""title"">Parry</td><td class=""box field"">" & _
-            CurChar.parryscore & "</td><td></td></tr>")
+             "<span class=""fullmove"">" & dodge & "</span>" & _
+             "<span class=""halfmove"">" & Math.Ceiling(dodge/2) & "</span></td><td></td></tr>")
+'        fw.Paragraph("    <tr><td class=""title"">Block</td><td class=""box field"">" & _
+'            CurChar.blockscore & "</td><td></td></tr>")
+'        fw.Paragraph("    <tr><td class=""title"">Parry</td><td class=""box field"">" & _
+'            CurChar.parryscore & "</td><td></td></tr>")
         fw.Paragraph("    </table>")
         fw.Paragraph("</div>")
     End Sub
@@ -1272,7 +1131,6 @@ Public Class ExportToHTML
         ExportPrimaryAttributes(CurChar, fw)
         ExportSecondaryAttributes(CurChar,fw)
         ExportPools(CurChar,fw)
-        ExportDefense(CurChar, fw)
         fw.Paragraph("</div>")
     End Sub
 
@@ -1300,8 +1158,8 @@ Public Class ExportToHTML
             "<th class=""center"">Lvl</th>" & _
             "<th class=""center"">Dmg</th>" & _
             "<th class=""center"">Reach</th>" & _
-            "<th class=""center"">Pry</th>" & _
-            "<th class=""center"">Blk</th>" & _
+            "<th class=""center"">Parry</th>" & _
+            "<th class=""center"">Block</th>" & _
             "</tr>")
         For i = 1 To CurChar.Items.Count
 
@@ -1344,7 +1202,7 @@ Public Class ExportToHTML
                     qty = StrToLng(CurChar.Items(i).tagitem("count"))
                 End If
 
-                fw.Paragraph("<tr><td class=""field"" colspan=""6"">" & UpdateEscapeChars(CurChar.Items(i).FullNameTL) & "</td></tr>")
+                fw.Paragraph("<tr><td class=""field title"" colspan=""6"">" & UpdateEscapeChars(CurChar.Items(i).FullNameTL) & "</td></tr>")
 
                 
                 
@@ -1443,7 +1301,7 @@ Public Class ExportToHTML
                     ' loop round for each range mode
                     CurMode = CurChar.Items(i).DamageModeTagItemAt("charrangemax")
 
-                    fw.Paragraph("<tr><td colspan=""8"" class=""field"">" & _
+                    fw.Paragraph("<tr><td colspan=""8"" class=""field title"">" & _
                         UpdateEscapeChars(CurChar.Items(i).FullNameTL) & "</td></tr>" )
 
                     weapon_mode_index = 0
@@ -1534,6 +1392,10 @@ Public Class ExportToHTML
                 Dim locDR As String = myLoadout.Body.Item(location).DR.Trim
                 Dim penalty As String = CurHitLine.Penalty
                 Dim roll As String = CurHitLine.Roll
+                Dim torso As String = ""
+                If location = "torso" Then
+                    torso = " class=""torso"""
+                End If
 
                 If locDR.Length = 0 Then
                     locDR = 0
@@ -1544,11 +1406,11 @@ Public Class ExportToHTML
 
                 locDR = RemoveNoteBrackets(locDR)
 
-                fw.Paragraph("<tr>" & _
+                fw.Paragraph("<tr" & torso & ">" & _
                     "<td class=""center"">" & roll & "</td>" & _
                     "<td class=""title"">" & location & "</td>" & _
                     "<td class=""center"">" & penalty & "</td>" & _
-                    "<td class=""field right"">" & locDR & "</td>" & _
+                    "<td class=""field right"">" & FormatArmor(locDR) & "</td>" & _
                     "</tr>")
             End If
         Next
@@ -1556,7 +1418,6 @@ Public Class ExportToHTML
         fw.Paragraph("</div>")
 
     End Sub
-
 
     Private Sub ExportEncumbrance(CurChar As GCACharacter, fw As FileWriter)
         Dim ListLoc As Integer
@@ -1569,7 +1430,7 @@ Public Class ExportToHTML
 
         fw.Paragraph("<div class=""encumbrance"">")
         fw.Paragraph("    <h1 class=""section-title"">Encumbrance</h1>")
-        fw.Paragraph("    <table class=""unalternate"">" & _
+        fw.Paragraph("    <table>" & _
             "<tr><th class=""title"">Level</th>" & _
             "<th class=""right"">Weight</th>" & _
             "<th class=""center"">Move</th>" & _
@@ -1887,6 +1748,10 @@ Public Class ExportToHTML
         Next
         fw.Paragraph("    </div>")
         fw.Paragraph("</div>")
+        fw.Paragraph("<script>")
+        fw.Paragraph("    const list = document.getElementsByClassName(""qty1"");")
+        fw.Paragraph("    for (var item of list) { item.innerHTML = """"; }")
+        fw.Paragraph("</script>")
     End Sub
 
 
@@ -2518,6 +2383,16 @@ Public Class ExportToHTML
         myLoadout.Calculate()
 
         Return myLoadout
+    End Function
+
+    Private Function ToDice(value As Integer) As String
+        Dim dice = Math.Floor(value/3.5)
+        Dim adds = Math.Ceiling(value Mod 3.5)
+        If adds > 0 Then
+            return dice & "d+" & adds
+        Else
+            return dice & "d"
+        End If 
     End Function
 
 End Class

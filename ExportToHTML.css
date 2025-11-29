@@ -1,0 +1,560 @@
+#combat-tab { 
+    display:grid;
+    grid-template-rows: auto;
+    gap: 0.5rem 0.5rem;
+    grid-auto-flow: column;
+    grid-area: combat-tab;
+    grid-template-columns: 7fr 3fr;
+    grid-template-areas: 
+        "melee defense" 
+        "ranged hit-locations" 
+        "ssrt ssrt";
+}
+#equipment-tab { 
+    display:grid;
+    grid-area: equipment-tab;
+    grid-template-columns: 70% 30%;
+    grid-template-rows: auto;
+    gap: 0.5rem 0.5rem;
+    grid-auto-flow: column;
+    grid-template-areas: 
+        "carried-equipment lift" 
+        "carried-equipment encumbrance";
+}
+#notes-tab { 
+    display:grid;
+    grid-template-rows: auto;
+    gap: 0.5rem 0.5rem;
+    grid-auto-flow: column;
+    grid-area: social-tab;
+    grid-template-columns: 100%;
+    grid-template-areas: "user-notes";
+}
+#notifications { 
+    color: red;
+}
+#skills-tab { 
+    display:grid;
+    grid-template-rows: auto;
+    gap: 0.5rem 0.5rem;
+    grid-auto-flow: column;
+    grid-area: skills-tab;
+    grid-template-columns: 33% 67%;
+    grid-template-areas: 
+        "traits skills" 
+        "spells spells";
+}
+#social-tab { 
+    display:grid;
+    grid-template-rows: auto;
+    gap: 0.5rem 0.5rem;
+    grid-auto-flow: column;
+    grid-area: social-tab;
+    grid-template-columns: 25% 50% 25%;
+    grid-template-areas: 
+        "languages notes reactions" 
+        "cultures notes reactions";
+}
+#user-notes { 
+    grid-area:user-notes;
+    width:100%;
+    height:100%;
+    min-height:20em;
+}
+.age { 
+    grid-area: age;
+}
+.age-field { 
+    grid-area: age-field;
+     }
+.ancestry { 
+    grid-area: ancestry;
+}
+.ancestry-field { 
+    grid-area: ancestry-field;
+}
+.appearance {
+    grid-area: appearance;
+}
+.appearance-field{
+    grid-area: appearance-field;
+}
+.attack-list .title {
+    text-align: left;
+}
+.attributes {  
+    grid-area: attributes;
+    display: grid;
+    grid-template-columns: 3fr 3fr 4fr;
+    grid-template-rows: auto;
+    grid-auto-flow: column;
+    grid-template-areas: "primary-attributes secondary-attributes pools";
+}
+.attributes-card { 
+    grid-area: attributes-card;
+}
+.birthday { 
+    grid-area: birthday;
+}
+.birthday-field { 
+    grid-area: birthday-field;
+}
+.box {
+    border: medium solid black;
+    padding-left: 0.5rem;
+    padding-right:0.5rem;
+    text-align:center;
+    vertical-align: middle;
+}
+.carried-equipment { 
+    grid-area: carried-equipment;
+    border: thick solid black;
+}
+.center { 
+    text-align: center;
+}
+.char-name-field { 
+    grid-area: char-name-field;
+    font-size: 3rem !important;
+    text-align: center;
+}
+.char-portrait-field {
+    grid-area: char-portrait-field;
+    text-align: center;
+}
+.char-title { 
+    grid-area: char-title;
+}
+.char-title-field { 
+    grid-area: char-title-field;
+}
+.charinfo {  
+    grid-area: charinfo;
+    align-content: flex-start;
+    font-size: 100%;
+    display: grid;
+    grid-template-columns: 1fr 3fr 1fr 3fr 1fr 3fr;
+    grid-template-rows: auto;
+    gap: 0.2rem 0.2rem;
+    grid-auto-flow: column;
+    grid-template-areas: 
+        "char-name-field char-name-field char-name-field player player-field player-field"
+        "height height-field weight weight-field age age-field"
+        "ancestry ancestry-field tl tl-field size size-field "
+        "appearance appearance-field appearance-field appearance-field appearance-field appearance-field";
+}
+.charinfo-card { 
+    display:grid;
+    grid-area: charinfo-card;
+    grid-template-columns: 2fr 3fr 1fr;
+    grid-template-rows: auto;
+    gap: 0.5rem 0.5rem;
+    grid-auto-flow: column;
+    grid-template-areas: "char-portrait-field charinfo point-summary";
+}
+.cultures { 
+    grid-area: cultures;
+    border: thick solid black;
+}
+.current, .torso { 
+    background-color: #D3D3D3;
+    font-size: larger;
+}
+.defense {
+    grid-area: defense;
+    border: thick solid black;
+}
+.encumbrance {
+    grid-area: encumbrance;
+    font-size: 90%;
+    border: thick solid black;
+}
+.equipment { 
+    width: 100%;
+    padding: 1em;
+    border: thick solid black;
+}
+.equipment-list, .skills-list, .spells-list { 
+    column-count:2;
+    column-gap: 1rem;
+    column-rule: medium solid black;
+}
+.eyes { 
+    grid-area: eyes;
+}
+.eyes-field { 
+    grid-area: eyes-field;
+}
+.field { 
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    color: #702963;
+    /* font-family: "Patrick Hand SC", cursive; */ 
+    font-weight: 400;
+    font-style: normal;
+    font-size:100%;
+}
+.footer a { 
+    text-decoration: none;
+    color: black;
+}
+.footer { 
+    grid-area: footer;
+    font-size: 0.7rem;
+    text-align: right;
+    margin-left:50%;
+}
+.hair { 
+    grid-area: hair;
+}
+.hair-field { 
+    grid-area: hair-field;
+}
+.halfmove {
+    color: red;
+    display: none;
+}
+.hand { 
+    grid-area: hand;
+}
+.hand-field { 
+    grid-area: hand-field;
+}
+.hanging { 
+    display: list-item;
+    list-style-position: inside;
+    text-indent: -0.5rem;
+    padding-left: 1.75rem;
+}
+.height { 
+    grid-area: height;
+}
+.height-field { 
+    grid-area: height-field;
+}
+.hit-locations td, .hit-locations th {
+    text-align: center;
+}
+.hit-locations { 
+    grid-area: hit-locations;
+    border: thick solid black;
+}
+.languages { 
+    grid-area: languages;
+    border: thick solid black;
+}
+.lift {
+    grid-area: lift;
+    font-size: 90%;
+    border: thick solid black;
+}
+.melee {
+    grid-area: melee;
+     border: thick solid black;
+}
+.name { 
+    grid-area: name;
+}
+.navigation button { 
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 1rem 0.5rem;
+    transition: 0.3s;
+}
+.navigation button.active { 
+    background-color: #ccc;
+}
+.navigation button:hover { 
+    background-color: #ddd;
+}
+.navigation { 
+    grid-area: navigation;
+    border: thin solid #ccc;
+    background-color:#f1f1f1;
+}
+.notes {
+    grid-area: notes;
+    border: thick solid black;
+}
+.number { 
+    text-align: right;
+}
+.org {
+    grid-area: org;
+}
+.org-field {
+    grid-area: org-field;
+}
+.other-equipment { 
+    grid-area: other-equipment;
+     border: thick solid black;
+ }
+.player { 
+    grid-area: player;
+    align-content:flex-end;
+}
+.player-field { 
+    grid-area: player-field;
+    align-content:flex-end;
+}
+.point-summary {
+    grid-area:point-summary;
+}
+.points {
+    font-size:70%;
+    padding-left: 0.5rem;
+    /* display:none;
+     * visibility:hidden; 
+     */
+}
+.pools {
+    grid-area: pools;
+    font-size: 120%;
+}
+.portrait {
+    max-width: 15vw;
+    max-height:15vw;
+}
+.primary-attributes {
+    grid-area: primary-attributes;
+    width:100%;
+    font-size: 120%;
+}
+.qty1 { 
+    /* visibility: hidden; */ 
+}
+.ranged {
+    grid-area: ranged;
+     border: thick solid black;}
+.reactions td { 
+    vertical-align: top;
+} 
+.reactions { 
+    grid-area: reactions;
+    border: thick solid black;
+}
+.religion {
+    grid-area: religion;
+}
+.religion-field {
+    grid-area: religion-field;
+}
+.right {
+    text-align:right;
+    vertical-align: middle;
+}
+.row div { 
+    display: inline-block;
+}
+.secondary-attributes {
+    grid-area: secondary-attributes;
+    font-size: 120%;
+}
+.section-title {
+    text-decoration: none;
+    background-color: black;
+    color: white;
+    padding: 1em;
+    font-size: 120%;
+    font-weight: bold;
+    text-align: center;
+}
+.size { 
+    grid-area: size;
+}
+.size-field { 
+    grid-area: size-field;
+}
+.skills {
+    grid-area: skills;
+    border: thick solid black;
+}
+.skin { 
+    grid-area: skin;
+}
+.skin-field { 
+    grid-area: skin-field;
+}
+.spells {
+    grid-area: spells;
+    border: thick solid black;
+}
+.ssrt td, .ssrt th { 
+    text-align: center;
+}
+.ssrt {
+    grid-area: ssrt;
+    border: thick solid black;
+}
+.tab div { 
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    break-inside: avoid;
+}
+.tab { 
+    font-size: 0.85rem; 
+    display: none;
+    animation: fadeEffect 1.5s;
+}
+.table-title {
+    text-decoration: none;
+    background-color: black;
+    color: white;
+    padding: 1em;
+    font-size: 110%;
+    font-weight: bold;
+    text-align: center;
+}
+.title { 
+    font-weight: bold;
+    text-align: right;
+}
+.title {
+    vertical-align:middle;
+}
+.tl {
+    grid-area: tl;
+}
+.tl-field{
+    grid-area: tl-field;
+}
+.traits {
+    grid-area: traits;
+    border: thick solid black;
+}
+.traits-list { 
+    column-count:1;
+    column-gap: 1rem;
+    column-rule: medium solid black;
+}
+.underlined { 
+    /*border-bottom: thin solid black;*/ 
+}
+.weight { 
+    grid-area: weight;
+}
+.weight-field { 
+    grid-area: weight-field;
+}
+@keyframes fadeEffect { 
+    from {opacity: 0;} to {opacity: 1;}
+}
+body { 
+    grid-template-columns: 100%;
+    max-width: 992px;
+    grid-template-areas: 
+        "charinfo-card"
+        "attributes-card"
+        "navigation"
+        "skills-tab"
+        "combat-tab"
+        "equipment-tab"
+        "social-tab"
+        "notes-tab"
+        "footer";
+    padding: 1em;
+    display: grid;
+    font-family: verdana;
+    grid-template-rows: auto;
+    gap: 0.5rem 0.5rem;
+    grid-auto-flow: column;
+}
+html { 
+    font-size: small;
+}
+table { 
+    width: 100%;
+}
+td { 
+    padding-left: 1em;
+    padding-right:1em;
+    vertical-align: middle;
+}
+th { 
+    text-align: left;
+    text-decoration: underline;
+    font-weight:bold;
+}
+
+@media screen and (max-width: 991px) { /* phone or tablet */
+    #combat-tab { 
+        grid-template-columns: 30% 70%; 
+        grid-template-areas: 
+            "defense hit-locations"
+            "melee melee" 
+            "ranged ranged" 
+            "ssrt ssrt"; 
+    }
+    #equipment-tab { 
+        grid-template-columns: 50% 50%; 
+        grid-template-rows: auto; 
+        grid-template-areas: 
+            "carried-equipment carried-equipment" 
+            "lift encumbrance"; 
+    }
+    #skills-tab { 
+        grid-template-columns: 100%; 
+        grid-template-areas: 
+            "skills" 
+            "traits" 
+            "spells"; 
+    }
+    #social-tab { 
+        grid-template-columns: 50% 50%;
+        grid-template-areas: 
+            "languages cultures" 
+            "reactions reactions" 
+            "notes notes";
+    }
+    .attributes {  
+        display: grid;
+        align-content: flex-start;
+        grid-template-columns: 50% 50%;
+        grid-template-areas:
+            "primary-attributes secondary-attributes"
+            "pools pools";
+    }
+    .box {
+        border: none;
+        padding-left: 0.5rem;
+        padding-right:;
+        text-align:initial;
+        vertical-align: initial;
+    }
+    .charinfo-card { 
+        grid-template-columns: 100%;
+        grid-template-areas: "charinfo";
+        border-bottom: thin solid black;
+        padding-bottom: 1rem;
+    }
+    .char-portrait-field, .points, .point-summary {
+        display: none;
+    }
+    .equipment-list, .skills-list, .spells-list { 
+        column-count:1;
+    }
+    .pools, .primary-attributes, .secondary-attributes {
+        font-size: 100%;
+    }
+    body { 
+        max-width: 100%;
+        align-content: flex-start;
+    }
+}
+
+@media print {
+    .footer {
+        position: fixed; 
+        bottom: 0;
+    }
+    .tab {
+        display: grid !important;
+        break-inside:avoid !important;
+    }
+    #notes-tab, .halfmove, .navigation, input, select, textarea {
+        display: none !important;
+    }
+}

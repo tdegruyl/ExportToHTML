@@ -5,21 +5,25 @@ This plugin for [***GURPS* Character Assistant**](https://www.sjgames.com/gurps/
 ## Features
 
 - Ultra-portable: a single file for each character which can be viewed in any
-  modern web browser
+  modern web browser. Includes styling, image(s), and scripting in a single
+  downloadable file
 - Works offline, if the file is local
 - Tabbed interface while viewing in browser
 - Printable in a reasonable way
 - Tracks HP, FP, and other pools locally within the browser, which is saved
   within the browser locally between sessions
+- Saves User Notes between sessions (saved in the browser)
 - Support for Conditional Injury from [***Pyramid #3/120***: *Conditional
   Injury*](https://warehouse23.com/products/pyramid-number-3-slash-120-alternate-gurps-v)
 - Support for tracking control for [***Fantastic Dungeon
   Grappling***](https://gaming-ballistic.myshopify.com/products/fantastic-dungeon-grappling)
+- Support for Armor As Dice from [***Pyramid #3/34***: *Armor Revisited*](https://warehouse23.com/products/pyramid-number-3-slash-34-alternate-gurps)
+- Mobile/tablet/desktop viewing optimization
+- Shows halved move and dodge when appropriate (highlighted in red)
 
 ### Planned Features
 
 - Compatibility with Mission X from Gaming Ballistic
-- Mobile viewing optimization
 
 ## Download
 
