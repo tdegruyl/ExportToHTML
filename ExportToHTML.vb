@@ -1102,9 +1102,9 @@ Public Class ExportToHTML
         If ListLoc > 0 Then
             move = CurChar.Items(ListLoc).TagItem("score")
         End If
-        dodge = CurChar.Items(ListLoc).TagItem("score") - EncRow
 
         ListLoc = CurChar.ItemPositionByNameAndExt("Dodge", Stats)
+        dodge = CurChar.Items(ListLoc).TagItem("score") - EncRow
 
         fw.Paragraph("<div class=""defense"">")
         fw.Paragraph("<h1 class=""section-title"">Defense</h1>")
@@ -1890,6 +1890,7 @@ Public Class ExportToHTML
 '****************************************
     Public Function RemoveNoteBrackets(ByVal MyString)
         MyString = Replace(MyString, "[note]", "")
+        MyString = Replace(MyString, "*", "")
 
         Return MyString
 
