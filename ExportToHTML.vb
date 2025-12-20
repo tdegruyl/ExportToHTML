@@ -403,9 +403,6 @@ Public Class ExportToHTML
         fw.Paragraph("<head>")
         fw.Paragraph("<meta charset=""utf-8""/>")
         fw.Paragraph("<title>" & CurChar.Name & "</title>")
-        fw.Paragraph("<!-- link rel=""preconnect"" href=""https://fonts.googleapis.com""/ -->")
-        fw.Paragraph("<!-- link rel=""preconnect"" href=""https://fonts.gstatic.com"" crossorigin / -->")
-        fw.Paragraph("<!-- link href=""https://fonts.googleapis.com/css2?family=Patrick+Hand+SC&display=swap"" rel=""stylesheet"" -->")
         fw.Paragraph("<meta name=""viewport"" content=""width=device-width, initial-scale=1"" />")
         fw.Paragraph("<style>")
         fw.Paragraph(css)
@@ -523,9 +520,9 @@ Public Class ExportToHTML
         Dim work As String
         Dim out As String
 
-        fw.Paragraph("            <div class=""skills sub-tab"" id=""skills"">")
-        fw.Paragraph("                <h1 class=""section-title"">Skills</h1>")
-        fw.Paragraph("                <div class=""skills-list"">")
+        fw.Paragraph("<div class=""skills sub-tab"" id=""skills"">")
+        fw.Paragraph("<h1 class=""section-title"">Skills</h1>")
+        fw.Paragraph("<div class=""skills-list"">")
 
         For i = 1 To CurChar.Items.Count
 
@@ -671,22 +668,22 @@ Public Class ExportToHTML
         Next
 
         fw.Paragraph("<div class=""primary-attributes"">")
-        fw.Paragraph("    <table>")
+        fw.Paragraph("<table>")
         For Each primAttr As String In primaryAttributes
             ListLoc = CurChar.ItemPositionByNameAndExt(primAttr, Stats)
             If ListLoc > 0 Then
-                fw.Paragraph("        <tr><td class=""title"">" & primAttr & "</td>" & _
+                fw.Paragraph("<tr><td class=""title"">" & primAttr & "</td>" & _
                     "<td class=""box field"">" &  CurChar.Items(ListLoc).TagItem("score") & "</td>" & _
                     "<td></td><td class=""points"">[" & CurChar.Items(ListLoc).TagItem("points") & "]</td></tr>")
             End If
         Next
 
         If includeThrustSwing = true Then
-            fw.Paragraph("        <tr><td>&nbsp;</td><td></td><td></td><td></td></tr>")
-            fw.Paragraph("        <tr><td class=""title"">Thrust</td><td class=""field"">" & CurChar.BaseTH & "</td><td></td><td></td></tr>")
-            fw.Paragraph("        <tr><td class=""title"">Swing</td><td class=""field"">"  & CurChar.BaseSW & "</td><td></td><td></td></tr>")
+            fw.Paragraph("<tr><td>&nbsp;</td><td></td><td></td><td></td></tr>")
+            fw.Paragraph("<tr><td class=""title"">Thrust</td><td class=""field"">" & CurChar.BaseTH & "</td><td></td><td></td></tr>")
+            fw.Paragraph("<tr><td class=""title"">Swing</td><td class=""field"">"  & CurChar.BaseSW & "</td><td></td><td></td></tr>")
         End If
-        fw.Paragraph("    </table>")
+        fw.Paragraph("</table>")
         fw.Paragraph("</div>")
 
     End Sub
@@ -719,8 +716,8 @@ Public Class ExportToHTML
                 CurChar.Items(ListLoc).TagItem("score") & "; </script></tr>")
         Next
         fw.Paragraph("<tr><td>&nbsp;</td><td></td><td></td><!-- <td></td>--></tr>")
-        fw.Paragraph("        </table>")
-        fw.Paragraph("    </div>")
+        fw.Paragraph("</table>")
+        fw.Paragraph("</div>")
     End Sub
 
     Private Function replaceSpaces( inputString As String) As String
